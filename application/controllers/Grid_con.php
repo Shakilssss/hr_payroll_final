@@ -73,7 +73,6 @@ class Grid_con extends CI_Controller {
 		} else {
 			$this->load->view('grid_con/daily_attendance_summaryy', $data);
 		}
-		
 	}
 
 	function daily_logout_report(){

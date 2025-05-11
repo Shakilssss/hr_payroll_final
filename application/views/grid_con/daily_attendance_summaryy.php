@@ -27,7 +27,7 @@
         <table class="table" align="center">
             <tr>
                 <th rowspan="2" style="background: #dbf5f9; font-size:12px">Sl.</th>
-                <th rowspan="2" style="background: #dbf5f9; font-size:12px">Line Name</th>
+                <th rowspan="2" style="background: #dbf5f9; font-size:12px">Section Name</th>
                 <?php foreach($keys as $key): ?>
                     <th colspan="6" style="background: #dbf5f9;font-size:12px"><?php echo $key; ?></th>
                 <?php endforeach; ?>

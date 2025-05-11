@@ -331,6 +331,68 @@ class Common_model extends CI_Model{
 	return $d;
 }
 
+	function get_group_wise_attendances($line_id, $date, $unit_id, $groupWiseDesigId) {
+		$d = [];
+
+		// Define which designations use attn_sum_line_id instead of emp_line_id
+		$use_attn_sum_line_id = $groupWiseDesigId;
+
+
+		// dd($groupWiseDesigId);
+
+		foreach ($groupWiseDesigId as $group_name => $designation_ids) {
+			if (!empty($designation_ids)) {
+				// dd($designation_ids);
+				$this->db->select("
+					SUM(CASE WHEN log.emp_id         != '' THEN 1 ELSE 0 END) AS total_emp,
+					SUM(CASE WHEN log.present_status = 'P' THEN 1 ELSE 0 END) AS emp_present,
+					SUM(CASE WHEN log.present_status = 'A' THEN 1 ELSE 0 END) AS emp_absent,
+					SUM(CASE WHEN log.present_status = 'L' THEN 1 ELSE 0 END) AS emp_leave
+				");
+				$this->db->from("pr_emp_shift_log as log");
+				$this->db->join("pr_emp_com_info as com", "log.emp_id = com.emp_id");
+				$this->db->join("emp_section as num", "num.id = com.emp_sec_id");
+				$this->db->join("emp_designation as desig", "desig.id = com.emp_desi_id");
+				$this->db->where("desig.hide_status", 1);
+
+				if (in_array($group_name, $use_attn_sum_line_id)) {
+					$this->db->where("com.attn_sum_line_id", $line_id);
+				} else {
+					$this->db->where("com.emp_sec_id", $line_id);
+				}
+				$this->db->where("com.unit_id", $unit_id);
+				$this->db->where("log.shift_log_date", $date);
+				$this->db->where_in("com.emp_desi_id", $designation_ids);
+				$this->db->group_by("log.shift_log_date");
+
+				$row = $this->db->get()->row();
+				// dd($row);
+				// dd($this->db->last_query());
+
+				// Assign default 0 if row is empty
+				if ($row) {
+					$d[$group_name] = $row;
+				} else {
+					$d[$group_name] = (object)[
+						'total_emp'   => 0,
+						'emp_present' => 0,
+						'emp_absent'  => 0,
+						'emp_leave'   => 0,
+					];
+				}
+			} else {
+				$d[$group_name] = (object)[
+					'total_emp'   => 0,
+					'emp_present' => 0,
+					'emp_absent'  => 0,
+					'emp_leave'   => 0,
+				];
+			}
+		}
+
+		return $d;
+	}
+
 
 	function get_shift_log($row, $emp_id, $first_date, $second_date){
         // joining date  checking

@@ -557,48 +557,51 @@ class Grid_model extends CI_Model{
 		$data['keys'] = array_keys($groupWiseDesigId);
 
 		$this->db->select("
-					num.id as line_id, num.line_name_en, num.line_name_bn, num.group_one,num.group_two,num.group_three,num.group_four,num.group_five,num.group_six,
-	                SUM( CASE WHEN log.emp_id 		  != '' THEN 1 ELSE 0 END ) AS all_emp,
-	                SUM( CASE WHEN log.present_status = 'P' THEN 1 ELSE 0 END ) AS all_present,
-	                SUM( CASE WHEN log.present_status = 'A' THEN 1 ELSE 0 END ) AS all_absent,
-	                SUM( CASE WHEN log.present_status = 'L' THEN 1 ELSE 0 END ) AS all_leave,
-	                SUM( CASE WHEN log.late_status    = 1 THEN 1 ELSE 0 END ) AS all_late,
-	                SUM( CASE WHEN per.emp_sex 		  = 1 THEN 1 ELSE 0 END ) AS all_male,
-	                SUM( CASE WHEN per.emp_sex 		  = 2 THEN 1 ELSE 0 END ) AS all_female,
-				");
+			num.id as line_id, num.sec_name_bn, num.sec_name_en, 
+			num.group_one,num.group_two,num.group_three,num.group_four,
+			num.group_five,num.group_six,
+			SUM( CASE WHEN log.emp_id 		  != '' THEN 1 ELSE 0 END ) AS all_emp,
+			SUM( CASE WHEN log.present_status = 'P' THEN 1 ELSE 0 END ) AS all_present,
+			SUM( CASE WHEN log.present_status = 'A' THEN 1 ELSE 0 END ) AS all_absent,
+			SUM( CASE WHEN log.present_status = 'L' THEN 1 ELSE 0 END ) AS all_leave,
+			SUM( CASE WHEN log.late_status    = 1 THEN 1 ELSE 0 END ) AS all_late,
+			SUM( CASE WHEN per.emp_sex 		  = 1 THEN 1 ELSE 0 END ) AS all_male,
+			SUM( CASE WHEN per.emp_sex 		  = 2 THEN 1 ELSE 0 END ) AS all_female,
+		");
 
 		$this->db->from("pr_emp_shift_log as log");
 		$this->db->from('pr_emp_com_info as com');
-		$this->db->from('emp_line_num as num');
+		$this->db->from('emp_section as num');
 		$this->db->from('pr_emp_per_info as per');
-
 		$this->db->where("log.emp_id = com.emp_id");
 		$this->db->where("per.emp_id = com.emp_id");
-		$this->db->where("num.id = com.emp_line_id");
-
+		$this->db->where("num.id = com.emp_sec_id");
 		$this->db->where("com.unit_id", $unit_id);
 		$this->db->where("log.shift_log_date", $date);
 		$this->db->where("log.in_time !=", "00:00:00");
 		$this->db->where("log.present_status !=", "W");
 		$this->db->where_not_in("com.emp_cat_id", array(2,3,4));
-
 		$this->db->group_by("num.id");
-		$this->db->order_by("num.line_name_en");
+		$this->db->order_by("num.sec_name_en");
 		$data['results'] = $this->db->get()->result();
-		// dd($data);
+		// dd($groupWiseDesigId);
+		// dd($this->db->last_query());
 		foreach ($data['results'] as $key => $row) {
-			$d = $this->common_model->get_group_wise_attendance($row->line_id, $date, $unit_id, $groupWiseDesigId);
+			$d = $this->common_model->get_group_wise_attendances($row->line_id, $date, $unit_id, $groupWiseDesigId);
 			// dd($d);
 			$data['results'][$key]->group_data  = $d;
+			// dd($data['results'][$key]->group_data);
+
 			$group_names = [
-				'Operator'    => $row->group_one,
-				'Helper'      => $row->group_two,
-				'Iron Man'    => $row->group_three,
-				'Line Chief'  => $row->group_four,
-				'Supervisor'  => $row->group_five,
-				'Input Man'   => $row->group_six,
+				'Operator'	    => $row->group_one,
+				'Supervisor'	=> $row->group_two,
+				'Line Chief'	=> $row->group_three,
+				'Asst. Operator'=> $row->group_four,
+				'Line Iron Man'	=> $row->group_five,
+				'Input Man'	  	=> $row->group_six,
 			];
 			foreach ($d as $d_key => $d_value) {
+				// dd($d_key);
 				foreach ($group_names as $group_name_key => $group_name) {
 					if ($d_key == $group_name_key) {
 						if(isset($data['results'][$key]->group_data[$d_key])){
